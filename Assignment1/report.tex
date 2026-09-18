@@ -1,0 +1,47 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=0.8in]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\title{CMPUT 328 Assignment 1\\\large Logistic Regression and Fully Connected Networks}
+\author{Laurie Gantuangco \\ Student ID: 1771419}
+\date{September 2026}
+
+\begin{document}
+\maketitle
+\vspace{-1em}
+\small
+
+\section{Setup}
+This assignment compares multinomial logistic regression on MNIST with a one-hidden-layer fully connected neural network (FFNN) on CIFAR-10. Images are normalized and flattened before entering the models. I used a fixed random seed of 328, batch size 256, a 5,000-image validation split, and \texttt{FAST\_MODE=True}: 25\% of the MNIST training data and 50\% of the CIFAR-10 training data. MNIST experiments ran for 10 epochs; CIFAR-10 experiments use 12 epochs. The MNIST baseline used SGD with momentum, learning rate 0.01, and cross-entropy loss.
+
+\section{MNIST Results}
+\subsection{Baseline and regularization}
+\textbf{Key takeaway: normalized MNIST pixels are simple enough that a linear model captures most of the useful signal.} The baseline reached 91.14\% final validation accuracy; training accuracy increased from 78.4\% to 92.2\%, while validation accuracy quickly plateaued near 91\%. This small late gap suggests that capacity, rather than severe overfitting, was not the main limitation on this task.
+
+\textbf{Key takeaway: at these strengths, regularization changed the weights more than it changed predictions.} With L2 weight decay $5\times10^{-4}$ and L1 strength $10^{-5}$, final validation accuracy was 91.18\% for L2 and 91.14\% for L1, effectively tied with the 91.14\% baseline. L1 did produce more near-zero parameters (2.39\%, versus 2.08\% for L2 and 2.04\% for the baseline), so its clearest effect was modest sparsity rather than improved accuracy.
+
+\subsection{SGD versus Adam}
+\textbf{Key takeaway: optimizer choice affected the route to a good solution more than the eventual result.} SGD converged faster initially (89.04\% versus Adam's 86.44\% validation accuracy at epoch 1), but Adam caught up and finished slightly higher at 91.36\% versus 91.14\% for SGD. The learning rates were 0.01 for SGD with momentum and 0.001 for Adam, so the comparison used rates appropriate to each optimizer.
+
+\subsection{Confusions and label noise}
+\textbf{Key takeaway: the remaining MNIST errors are primarily shape ambiguities that a fixed linear pixel template cannot resolve.} The largest test confusions were $4\rightarrow9$ (51), $8\rightarrow5$ (49), $8\rightarrow3$ (34), $5\rightarrow3$ (32), and $7\rightarrow9$ (32), involving overlapping curves, loops, and open/closed shapes. Recall was weakest for 8 (83.16\%), 5 (87.78\%), and 2 (88.18\%), while 0 and 1 were easiest to recognize.
+
+\textbf{Key takeaway: a moderate amount of label noise degrades learning, but its effect is not one-for-one with the noise rate.} Changing exactly 10\% of training labels reduced final validation accuracy from 91.14\% to 89.34\%, a decrease of 1.80 percentage points. The drop was smaller than ten points because 90\% of labels remained correct and the model could still learn common digit patterns.
+
+\section{CIFAR-10 FFNN}
+\textbf{Key takeaway: adding nonlinear capacity helps fit CIFAR-10, but capacity cannot replace a useful image representation.} The flattened baseline used architecture $3072\rightarrow512\rightarrow10$, ReLU, Adam at 0.001, and cross-entropy. It had 1,578,506 parameters, compared with 30,730 for CIFAR-10 logistic regression. Training accuracy rose from 38.2\% to 76.37\%, but validation accuracy peaked at only 48.72\% in epoch 8 and ended at 48.64\%. Validation loss rose while training loss fell, producing a 27.73-point final gap and clear overfitting.
+
+\textbf{Key takeaway: the error pattern is semantic and structural, not random.} The largest validation confusions were automobile$\rightarrow$truck (113), dog$\rightarrow$cat (112), cat$\rightarrow$dog (104), cat$\rightarrow$frog (66), and truck$\rightarrow$automobile (63). Recall was lowest for bird (29.53\%), cat (33.39\%), dog (36.53\%), and deer (37.87\%), while horse reached 64.36\% and ship 61.22\%. The 16-image grid showed understandable vehicle and animal ambiguities, but flattening removes local shape information and translation tolerance that would help resolve them.
+
+\textbf{Key takeaway: reducing capacity reduced overfitting, but did not improve generalization in this run.} Reducing the hidden layer from 512 to 256 units, while holding everything else fixed, lowered parameters to 789,258 and reduced the final gap to 25.37 points. However, training accuracy fell to 72.97\%, best validation accuracy fell to 48.20\%, and final validation accuracy fell to 47.60\%. The smaller model therefore lost useful capacity as well as reducing memorization.
+
+\section{Conclusion}
+The central lesson is that representation matters more than parameter count alone. On MNIST, a linear model already captured the dominant digit structure, so optimizer and regularization changes produced only small accuracy differences; the main remaining errors came from ambiguous handwriting and label noise. On CIFAR-10, a much larger nonlinear FFNN fit the training set but generalized poorly because flattened pixels do not encode neighbouring-pixel relationships or translation invariance. The confusion patterns, error images, and hidden-size experiment all point to the same conclusion: a model needs an inductive bias that matches the data, not merely more parameters.
+
+\section*{AI-assistance disclosure}
+I used GitHub Copilot to help organize notebook experiments, implement plotting and evaluation cells, and draft this report structure. I reviewed the generated code, ran the experiments, and verified the reported values from the notebook outputs.
+
+\end{document}

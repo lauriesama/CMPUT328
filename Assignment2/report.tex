@@ -1,0 +1,79 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.8in]{geometry}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage[T1]{fontenc}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\setlist{nosep,leftmargin=*}
+\renewcommand{\arraystretch}{1.05}
+
+\title{CMPUT 328 Assignment 2\\\large CIFAR-10 CNNs and Vision Transformers with LoRA}
+\author{Laurie Gantuangco \\ Student ID: 1771419}
+\date{October 2026}
+
+\begin{document}
+\maketitle
+\vspace{-1em}
+\small
+
+\section{Part 1 -- CNN}
+\textbf{Key takeaway:} A convolutional inductive bias suits CIFAR-10's small images, and this CNN exceeded the assignment's validation target with only mild late overfitting.
+\textbf{Data and model.} I used the official 45,000/5,000 train/validation split, generated with seed 328 and saved for Part 2; the official 10,000-image test set was held out. Images were normalized with CIFAR-10 channel statistics, with random crop and horizontal flip applied only to training. The final run used \texttt{FAST\_MODE=False}. The CNN has six 3$\times$3 convolutions (stride 1, padding 1), BatchNorm and ReLU, arranged in three two-convolution blocks with 2$\times$2 max-pooling (stride 2), then a classifier.
+
+\textbf{Why the shapes change.} A convolution's output width is $\lfloor(W+2p-k)/s\rfloor+1$. Here $k=3$, $p=1$, and $s=1$, so each convolution preserves height and width; only channels change. The feature shapes are
+\[
+N\!\times\!3\!\times\!32\!\times\!32 \to N\!\times\!32\!\times\!32\!\times\!32
+\to N\!\times\!32\!\times\!16\!\times\!16 \to N\!\times\!64\!\times\!16\!\times\!16
+\to N\!\times\!64\!\times\!8\!\times\!8 \to N\!\times\!128\!\times\!8\!\times\!8
+\to N\!\times\!128\!\times\!4\!\times\!4.
+\]
+Each 2$\times$2 pool halves both spatial dimensions. Only after the last pool is the tensor flattened to 2,048 features per image, then mapped 2,048$\to$256$\to$10.
+
+\textbf{Sanity check and learning.} A fresh model overfit one fixed 128-image batch to 100\% accuracy and loss 0.0070 in 40 iterations, below the 200-iteration limit. Over 30 epochs, training loss fell from 1.5396 to 0.2897 and validation loss from 1.1959 to 0.4252. Final train/validation accuracies were 90.17\%/87.10\%; validation loss was lowest at epoch 25 (0.3683), then rose modestly as training continued. The 3.07-point accuracy gap suggests mild late overfitting, not severe divergence. Test accuracy was 86.07\%, close to validation performance and above the 80\% target.
+
+\textbf{Example errors.} The validation grid includes correct cat, ship, bird, airplane and dog predictions. Errors include cat$\to$bird/dog/frog/horse, bird$\to$airplane/frog, dog$\to$cat, and airplane$\to$ship. CIFAR images are only 32$\times$32, so fine details, pose and background can make these visually similar classes ambiguous. This is consistent with the small validation-loss rise and the remaining gap between validation and training accuracy.
+
+\section{Part 2 -- Scratch ViT, Pretraining and LoRA}
+\textbf{Key takeaway:} ImageNet pretraining drove the largest accuracy improvement; LoRA achieved nearly full fine-tuning accuracy with a small trainable fraction.
+\textbf{Architecture and sanity checks.} The scratch ViT divides each 32$\times$32 image into 4$\times$4 patches, producing 64 tokens of dimension 256. It prepends a learnable CLS token, adds positional embeddings, applies eight Transformer blocks, then classifies the normalized CLS representation. The shape check reported 64 patch tokens, 65 tokens including CLS, and 10 output logits. On a fixed batch of 128 images, it reached 100\% accuracy and loss 0.0063 in 75 steps. It trained 30 epochs with AdamW (learning rate $3\times10^{-4}$, weight decay 0.05, batch 128). Training/validation accuracy ended at 82.21\%/78.24\%; the gap was 3.97 points. Validation loss bottomed at 0.6206 at epoch 25 and then plateaued near 0.62, indicating continued learning with a small generalization gap. Test accuracy was 78.43\%.
+
+\newpage
+\textbf{Model comparison.} All runs used the same split. The pretrained processor's mean/std were (0.5, 0.5, 0.5), and CIFAR images were resized to 224$\times$224. Linear probing froze the backbone; LoRA used rank 8, alpha 16, dropout 0.1, query/value projections, and a trainable classifier. Pretrained runs used batch size 8; linear probe ran 2 epochs and LoRA/full fine-tuning 3 epochs. The lower batch size was chosen for local 16-GB GPU memory and is reported here.
+
+\scriptsize
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}X r r r r r@{}}
+\toprule
+Model & Val./test (\%) & Trainable (n; \%) & s/epoch & Peak MB\\
+\midrule
+Scratch ViT & 78.24/78.43 & 4.25M; 100 & 9.5 & 931\\
+CNN baseline & 89.64/89.00 & 0.815M; 100 & 5.4 & 166\\
+Linear probe & 96.74/96.46 & 7.69K; 0.009 & 48.7 & 493\\
+LoRA ($r=8$) & 98.78/98.41 & 302.6K; 0.351 & 103.2 & 1,036\\
+Full fine-tuning & 98.70/98.62 & 85.8M; 100 & 222.2 & 1,858\\
+Controlled LoRA ($r=4$) & 98.70/98.53 & 155.1K; 0.180 & 104.3 & 1,034\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\normalsize
+
+The scratch CNN outperformed the scratch ViT (89.00\% vs. 78.43\% test accuracy). Convolutions encode locality and translation-related structure that helps on small images; a scratch ViT must learn such structure from the limited CIFAR-10 data. Pretraining changed the picture: even the frozen-backbone linear probe reached 96.46\% test accuracy. LoRA came within 0.21 points of full fine-tuning while updating only 0.35\% of parameters, in less than half its per-epoch time and memory.
+
+\textbf{Confusions and errors.} On validation, the scratch ViT made 1,088 errors versus 61 for LoRA. The scratch model most often confused cat$\to$dog (130), dog$\to$cat (58), and deer$\to$horse (43); LoRA's largest pairs were dog$\to$cat (9) and truck$\to$automobile (6). The LoRA misclassification grid likewise shows ambiguity among low-resolution animal images (for example, dog/cat/deer and bird/deer), with a few aircraft/ship and automobile/truck confusions.
+
+\textbf{Controlled experiment.} Before running, I hypothesized that reducing LoRA rank from 8 to 4 would nearly halve trainable parameters, slightly lower accuracy, and leave time/memory similar. Rank 4 used 155,146 parameters (0.18\%) versus 302,602 (0.35\%) at rank 8. It achieved 98.53\% test accuracy, 0.12 points higher than rank 8 (98.41\%); epoch time and peak memory were effectively unchanged (104.3 s and 1,034 MB versus 103.2 s and 1,036 MB). The accuracy hypothesis did not hold in this run; rank 4 retained sufficient capacity, while the frozen backbone still dominated cost.
+
+\section{Key Takeaways}
+\begin{itemize}
+\item CNN locality helps on 32$\times$32 images: the scratch CNN reached 89.00\% test accuracy, versus 78.43\% for the scratch ViT.
+\item Pretraining was more important than updating every parameter: the linear probe reached 96.46\% test accuracy, and LoRA reached 98.41\% while training only 0.35\% of parameters.
+\item Halving LoRA rank nearly halved trainable parameters without hurting test accuracy in this run; measured time and peak memory stayed similar because the frozen backbone dominates compute and activations.
+\end{itemize}
+
+\section{AI-Assistance Disclosure}
+GitHub Copilot helped implement and debug notebook code and draft this report. I ran the notebook experiments and checked the reported metrics against their outputs.
+\end{document}

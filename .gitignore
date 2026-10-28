@@ -1,2 +1,5 @@
 .venv
 data/
+student_release/
+*.pt
+*.zip

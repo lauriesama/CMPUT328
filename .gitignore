@@ -3,3 +3,6 @@ data/
 student_release/
 *.pt
 *.zip
+datasets/
+outputs/
+__pycache__/

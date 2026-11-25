@@ -8,3 +8,8 @@ __pycache__/
 datasets/
 outputs/
 __pycache__/
+data/
+checkpoints/
+Assignment5/tmp/
+Assignment5/chartqa_course/
+Assignment5/runs/

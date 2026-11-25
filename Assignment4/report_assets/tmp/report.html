@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<base href="../">
+<title>CMPUT 328 Assignment 4 Report</title>
+<meta name="author" content="Laurie Gantuangco">
+<link rel="stylesheet" href="report.css">
+</head>
+<body>
+<h1>CMPUT 328 Assignment 4</h1>
+<p>Generative Models: Diffusion, Flow Matching and CycleGAN</p>
+<p>Laurie Gantuangco | Student ID: 1771419 | November 2026</p>
+<h2>Results at a glance</h2>
+<p class="title"><strong>Table 1. One 20-epoch run per part</strong></p>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Model</th>
+<th>Evaluation</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. Diffusion</td>
+<td>DiT (7.38M parameters), noise-prediction loss</td>
+<td>FID, 8 DDIM steps</td>
+<td>26.22 (target &lt; 30)</td>
+</tr>
+<tr>
+<td>2. Flow matching</td>
+<td>Same DiT, velocity loss</td>
+<td>FID, 8 Euler steps</td>
+<td>19.87 (target &lt; 30)</td>
+</tr>
+<tr>
+<td>3. CycleGAN</td>
+<td>2 generators (7.83M each), 2 discriminators (2.76M each)</td>
+<td>Visual, held-out test images</td>
+<td>Horse→zebra works; zebra→horse weak</td>
+</tr>
+</tbody>
+</table>
+<p class="title"><strong>Figure 1. Both FashionMNIST models pass FID &lt; 30; diffusion only after a learning-rate decay</strong></p>
+<p class="figure"><img alt="FID at 8 steps and training losses" src="fig_metrics.png" /></p>
+<p class="caption"><em>Left: FID from the provided cell (9,984 test images against as many generated). The hatched bar is an earlier run of the provided constant-rate loop; its output was overwritten and is not in the notebook. Right: epoch losses printed by the notebooks.</em></p>
+<h2>Part 1 — Diffusion</h2>
+<ul>
+<li><strong>Implemented:</strong> sinusoidal timestep embedding with an MLP, a label embedding table, the adaLN-Zero DiT block, a linear β schedule with one-step noising, and a zero-variance DDIM sampler over evenly spaced timesteps.</li>
+<li><strong>Result:</strong> FID 26.22 at 8 DDIM steps; noise MSE fell from 0.068 to 0.025.</li>
+<li><strong>One change to the provided loop:</strong> with a constant learning rate the FID was 40.66, although that model scored about 23.5 at 50 steps. Adding a cosine learning-rate decay gave 26.22. The architecture and FID cell are untouched.</li>
+</ul>
+<h2>Part 2 — Flow matching</h2>
+<ul>
+<li><strong>Implemented:</strong> training on straight noise-to-data paths (target velocity = data − noise, time uniform on [0, 1]) and a forward Euler sampler from t = 0 to t = 1.</li>
+<li><strong>Result:</strong> FID 19.87 at 8 Euler steps with the provided loop unchanged; velocity MSE fell from 0.288 to 0.146.</li>
+<li><strong>Caveat:</strong> not a controlled comparison with Part 1. These are single unseeded runs with different learning-rate schedules.</li>
+</ul>
+<p class="title"><strong>Figure 2. The same starting noise sampled at 8 steps (the FID setting) and at the notebooks' default step count</strong></p>
+<p class="figure"><img alt="Samples at two step counts" src="fig_samples.png" /></p>
+<p class="caption"><em>Columns are classes 0–9. Generated for this report from the submitted checkpoints with the notebooks' own samplers.</em></p>
+<h2>Part 3 — CycleGAN</h2>
+<ul>
+<li><strong>Implemented:</strong> least-squares GAN loss (MSE on raw discriminator scores), L1 cycle and identity losses, both generator directions, and the real-image half of each discriminator loss.</li>
+<li><strong>Result:</strong> horse→zebra paints stripes on most held-out horses, with tinted backgrounds and stripes bleeding outside the animal. Zebra→horse does not produce a horse coat.</li>
+</ul>
+<p class="title"><strong>Figure 3. Horse→zebra adds stripes on held-out horses; zebra→horse does not produce horses</strong></p>
+<p class="figure"><img alt="CycleGAN translations of test images" src="fig_cyclegan.png" /></p>
+<p class="caption"><em>First 8 test images of each domain in filename order (not selected), final checkpoint. Produced for this report from the submitted checkpoint.</em></p>
+<p class="title"><strong>Figure 4. The same two test images per direction, translated by the checkpoints from epochs 1 to 20</strong></p>
+<p class="figure"><img alt="CycleGAN translations across training epochs" src="fig_cyclegan_epochs.png" /></p>
+<h2>Key takeaways</h2>
+<ul>
+<li><strong>Flow matching scored best at 8 steps with no changes:</strong> FID 19.87 (Figure 1).</li>
+<li><strong>Diffusion passed only after a learning-rate decay:</strong> 26.22, against 40.66 for the constant-rate run (Figure 1).</li>
+<li><strong>The CycleGAN works in one direction:</strong> stripes appear on horses, but zebras do not become horses (Figure 3).</li>
+<li><strong>All results are single unseeded runs,</strong> so differences of a few FID points should not be over-read.</li>
+</ul>
+<h2>AI-assistance disclosure</h2>
+<p>GitHub Copilot (agent mode in VS Code) helped implement the TODO sections and drafted this report and its figures. The notebooks were run locally instead of on Colab; the changes this needed are listed in each notebook.</p>
+</body>
+</html>

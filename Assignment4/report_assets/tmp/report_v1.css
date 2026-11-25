@@ -1,0 +1,107 @@
+@page {
+    size: letter;
+    margin: 0.55in 0.75in 0.5in;
+}
+
+body {
+    font-family: "Liberation Serif", "Nimbus Roman", "Times New Roman", serif;
+    font-size: 9pt;
+    line-height: 10.6pt;
+    margin: 0;
+}
+
+p {
+    margin: 0 0 3pt;
+}
+
+/* Title block: the h1 and the two paragraphs that follow it. */
+h1 {
+    font-size: 15pt;
+    line-height: 18pt;
+    text-align: center;
+    margin: 0;
+}
+
+h1 + p {
+    font-size: 11pt;
+    line-height: 13pt;
+    text-align: center;
+    margin: 0;
+}
+
+h1 + p + p {
+    font-size: 10pt;
+    line-height: 12pt;
+    text-align: center;
+    margin: 0 0 4pt;
+}
+
+h2 {
+    font-size: 11pt;
+    line-height: 13pt;
+    margin: 4pt 0 2pt;
+    break-after: avoid;
+}
+
+code {
+    font-family: "Liberation Mono", "DejaVu Sans Mono", monospace;
+    font-size: 8pt;
+}
+
+sub,
+sup {
+    font-size: 6.5pt;
+    line-height: 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8pt;
+    line-height: 9pt;
+    margin: 2pt 0 3pt;
+}
+
+th,
+td {
+    text-align: left;
+    vertical-align: top;
+    padding: 1.2pt 3pt;
+}
+
+thead tr {
+    border-top: 0.8pt solid black;
+    border-bottom: 0.4pt solid black;
+}
+
+tbody tr:last-child {
+    border-bottom: 0.8pt solid black;
+}
+
+/* A paragraph that is only an image is a figure. */
+p > img:only-child {
+    display: block;
+    width: 100%;
+    margin: 2pt auto 0;
+}
+
+p > img[src="fig_cyclegan.png"] {
+    width: 6in;
+}
+
+/* A paragraph that is only emphasis is a table or figure caption. */
+p > em:only-child {
+    display: block;
+    font-size: 8pt;
+    line-height: 9.5pt;
+    text-align: center;
+}
+
+ul {
+    margin: 0;
+    padding-left: 14pt;
+}
+
+li {
+    margin: 0 0 2pt;
+}

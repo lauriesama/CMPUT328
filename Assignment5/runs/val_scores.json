@@ -1,0 +1,62 @@
+{
+  "charts": 400,
+  "metrics": {
+    "chart_type": 0.9610629921259842,
+    "table": 0.3510509398004749,
+    "qa": 0.521144068393403
+  },
+  "chart_type_accuracy": {
+    "v_bar": 1.0,
+    "h_bar": 0.984251968503937,
+    "line": 0.86,
+    "pie": 1.0
+  },
+  "chart_type_counts": {
+    "v_bar": 127,
+    "h_bar": 127,
+    "line": 100,
+    "pie": 46
+  },
+  "qa_accuracy": {
+    "human": 0.3309178743961353,
+    "augmented": 0.7113702623906706
+  },
+  "qa_counts": {
+    "human": 414,
+    "augmented": 343
+  },
+  "component_marks": {
+    "chart_type": 10.0,
+    "table": 30.21018796009498,
+    "qa": 50.0
+  },
+  "mark_before_time": 90.21018796009498,
+  "elapsed_seconds": 310.10183963843156,
+  "time_multiplier": 1.0,
+  "mark_out_of_100": 90.21018796009498,
+  "format_errors": {},
+  "grading": {
+    "chart_type": {
+      "weight": 10,
+      "lower": 0.45,
+      "upper": 0.9
+    },
+    "table": {
+      "weight": 40,
+      "lower": 0.2,
+      "upper": 0.4
+    },
+    "qa": {
+      "weight": 50,
+      "lower": 0.2,
+      "upper": 0.5
+    },
+    "time_penalty": true,
+    "fast_seconds": 1000,
+    "slow_seconds": 2000,
+    "hard_seconds": 2000
+  },
+  "grading_source": "chartqa_metrics.py",
+  "inference_errors": {},
+  "unknown_prediction_ids": 0
+}
